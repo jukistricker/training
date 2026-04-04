@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentoring Session 1 HW</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+    <div id="success-msg" class="success-toast">
+        Form submitted successfully!
+    </div>
+    <form id="form">
+        <h2 style="margin: 0 0 10px 0; text-align: center; color: #333;">Form</h2>
+        <div class="form-input">
+            <input type="text" name="name" id="name" placeholder="Name">
+            <span id="name-error" class="error"></span>
+        </div>
+        <div class="form-input">
+            <input type="text" name="email" id="email" placeholder="Email">
+            <span id="email-error" class="error"></span>
+        </div>
+        <button type="submit" id="submit-btn" disabled>Submit</button>
+    </form>
+</body>
+<script src="./build/main.js"></script>
+
+</html>
