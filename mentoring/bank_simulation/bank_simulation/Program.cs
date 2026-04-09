@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Transactions;
 namespace bank_simulation;
 
 public class Program
@@ -9,14 +10,14 @@ public class Program
     public static readonly string transactionsFields = "ID,AccountNumber,Type,Amount,Date,Description";
     public static readonly string adminPin = "01234";
     const decimal DAILY_LIMIT = 50000;
-    public static CsvRepository<BankAccount> AccountRepo { get; set; }
-    public static CsvRepository<Transaction> TransactionRepo { get; set; }
+    public static List<BankAccount> Accounts = [];
+    public static List<Transaction> Transactions = [];
     public static void Main(string[] args)
     {       
         Program myApp = new Program();
         createCsv(bankAccountsPath, bankAccountsFields);
         createCsv(transactionsPath, transactionsFields);
-        InitializeRepos();
+        LoadData();
         SeedAdminData();
         _=BackgroundInterest();
         bool isRunning = true;
@@ -59,7 +60,6 @@ public class Program
 
 
     }
-
     public static void createCsv(string filePath, string fields)
     {
         if (!File.Exists(filePath))
@@ -68,45 +68,12 @@ public class Program
         }
     }
 
-    public static void InitializeRepos()
-    {
-        AccountRepo = new CsvRepository<BankAccount>(
-            bankAccountsPath,
-            bankAccountsFields,
-            parts => new BankAccount
-            {
-                AccountNumber = parts[0],
-                OwnerName = parts[1],
-                Balance = decimal.Parse(parts[2]),
-                Status = Enum.Parse<AccountStatus>(parts[3]),
-                Role = Enum.Parse<Role>(parts[4]),
-                CreatedAt = DateTime.Parse(parts[5]),
-                LastInterestDate = string.IsNullOrWhiteSpace(parts[6]) ? (DateTime?)null : DateTime.Parse(parts[6])
-            },
-            acc => $"{acc.AccountNumber},{acc.OwnerName},{acc.Balance},{acc.Status},{acc.Role},{acc.CreatedAt:O},{(acc.LastInterestDate.HasValue ? acc.LastInterestDate.Value.ToString("O") : "")}"
-        );
-
-        TransactionRepo = new CsvRepository<Transaction>(
-            transactionsPath,
-            transactionsFields,
-            parts => new Transaction
-            {
-                TransactionId = int.Parse(parts[0]),
-                AccountNumber = parts[1],
-                Type = Enum.Parse<TransactionType>(parts[2]),
-                Amount = decimal.Parse(parts[3]),
-                Date = DateTime.Parse(parts[4]),
-                Description = parts[5]
-            },
-            t => $"{t.TransactionId},{t.AccountNumber},{t.Type},{t.Amount},{t.Date:O},{t.Description}"
-        );
-    }
 
     public static void SeedAdminData()
     {
         string adminAccNo = "ADMIN001";
 
-        var existingAdmin = AccountRepo.Get(a => a.AccountNumber == adminAccNo);
+        var existingAdmin = Accounts.FirstOrDefault(a => a.AccountNumber == adminAccNo);
 
         if (existingAdmin == null)
         {
@@ -120,22 +87,55 @@ public class Program
                 CreatedAt = DateTime.Now
             };
 
-            AccountRepo.Add(adminAcc);
+            Accounts.Add(adminAcc);
+            SaveData();
         }
+    }
+
+    public static void LoadData()
+    {
+        if (File.Exists(bankAccountsPath))
+        {
+            Accounts = File.ReadAllLines(bankAccountsPath)
+                           .Skip(1) 
+                           .Where(line => !string.IsNullOrWhiteSpace(line))
+                           .Select(line => BankAccount.FromCsvRow(line.Split(',')))
+                           .ToList();
+        }
+
+        if (File.Exists(transactionsPath))
+        {
+            Transactions = File.ReadAllLines(transactionsPath)
+                               .Skip(1)
+                               .Where(line => !string.IsNullOrWhiteSpace(line))
+                               .Select(line => Transaction.FromCsvRow(line.Split(',')))
+                               .ToList();
+        }
+    }
+
+    public static void SaveData()
+    {
+        var accLines = Accounts.Select(a => a.ToCsvRow()).Prepend(bankAccountsFields);
+        File.WriteAllLines(bankAccountsPath, accLines);
+
+        var transLines = Transactions.Select(t => t.ToCsvRow()).Prepend(transactionsFields);
+        File.WriteAllLines(transactionsPath, transLines);
     }
 
     public void Dashboard()
     {
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("=== Bank Account System ===");
-        Console.WriteLine("1. Create new account");
-        Console.WriteLine("2. Deposit money");
-        Console.WriteLine("3. Withdraw money");
-        Console.WriteLine("4. Transfer money");
-        Console.WriteLine("5. View account details");
-        Console.WriteLine("6. View transaction history");
-        Console.WriteLine("7. Freeze / Unfreeze account");
-        Console.WriteLine("8. Exit");
+        Console.WriteLine(" === Bank Account System ===");
+        Console.WriteLine("""
+            1. Create new account
+            2. Deposit money
+            3. Withdraw money
+            4. Transfer money
+            5. View account details
+            6. View transaction history
+            7. Freeze / Unfreeze account
+            8. Exit
+            """);
         Console.ResetColor();
         Console.Write("Enter your choice: ");
     }
@@ -149,7 +149,7 @@ public class Program
             WriteColor("Error: Account number cannot be empty!", ConsoleColor.Red);
             return;
         }
-        if (AccountRepo.Get(a => a.AccountNumber == accNo) != null)
+        if (Accounts.FirstOrDefault(a => a.AccountNumber == accNo) != null)
         {
             WriteColor("Error: Account number must be unique!", ConsoleColor.Red);
             return;
@@ -179,24 +179,25 @@ public class Program
             Role = Role.Customer,
             CreatedAt = DateTime.Now
         };
-
-        AccountRepo.Add(newAcc);
+        Accounts.Add(newAcc);
+        SaveData();
         Console.WriteLine("Account created successfully.");
     }
 
     // 5.2 Deposit Money
     public static void Deposit()
     {
-        var acc = FindAccount();
+        var acc = FindAccount(); 
         if (acc == null || IsFrozen(acc)) return;
 
         Console.Write("Enter amount to deposit: ");
         if (decimal.TryParse(Console.ReadLine(), out decimal amount) && amount > 0)
         {
             acc.Balance += amount;
-            AccountRepo.Update(a => a.AccountNumber == acc.AccountNumber, acc);
 
             LogTransaction(acc.AccountNumber, TransactionType.Deposit, amount, "Deposit to account");
+            SaveData();
+
             Console.WriteLine($"Deposit successful. New Balance: {acc.Balance:N0}");
         }
         else WriteColor("Invalid amount.", ConsoleColor.Red);
@@ -211,17 +212,18 @@ public class Program
         Console.Write("Enter amount to withdraw: ");
         if (decimal.TryParse(Console.ReadLine(), out decimal amount) && amount > 0)
         {
-            if (acc.Balance - amount < 100) // Minimum balance rule
+            if (acc.Balance - amount < 100)
             {
-                WriteColor("Insufficient funds to maintain minimum balance of 100.", ConsoleColor.Red);
+                WriteColor("Insufficient funds.", ConsoleColor.Red);
                 return;
             }
-            if (acc.Role!=Role.Admin&&IsOverDailyLimit(acc.AccountNumber, amount)) return;
+            if (acc.Role != Role.Admin && IsOverDailyLimit(acc.AccountNumber, amount)) return;
 
             acc.Balance -= amount;
-            AccountRepo.Update(a => a.AccountNumber == acc.AccountNumber, acc);
-
             LogTransaction(acc.AccountNumber, TransactionType.Withdraw, amount, "Withdraw from account");
+
+            SaveData();
+
             Console.WriteLine($"Withdraw successful. Remaining Balance: {acc.Balance:N0}");
         }
         else WriteColor("Invalid amount.", ConsoleColor.Red);
@@ -247,25 +249,18 @@ public class Program
         Console.Write("Enter amount to transfer: ");
         if (decimal.TryParse(Console.ReadLine(), out decimal amount) && amount > 0)
         {
-            if(amount>source.Balance)
+            if (amount > source.Balance || source.Balance - amount < 100)
             {
                 WriteColor("Insufficient funds.", ConsoleColor.Red);
                 return;
             }
-            if (source.Balance - amount < 100)
-            {
-                WriteColor("Insufficient funds to maintain minimum balance of 100 after transfer.", ConsoleColor.Red);
-                return;
-            }
-
             source.Balance -= amount;
             dest.Balance += amount;
 
-            AccountRepo.Update(a => a.AccountNumber == source.AccountNumber, source);
-            AccountRepo.Update(a => a.AccountNumber == dest.AccountNumber, dest);
-
             LogTransaction(source.AccountNumber, TransactionType.Transfer, amount, $"Transfer to {dest.AccountNumber}");
             LogTransaction(dest.AccountNumber, TransactionType.Transfer, amount, $"Transfer from {source.AccountNumber}");
+
+            SaveData();
 
             Console.WriteLine("Transfer completed successfully.");
         }
@@ -295,19 +290,17 @@ public class Program
 
         Console.WriteLine("Filter: 1. All | 2. Deposits | 3. Withdraws");
         string filter = Console.ReadLine();
-
-        List<Transaction> logs;
-        if (!isAdmin)
-            logs = TransactionRepo.GetAll().Where(t => t.AccountNumber == acc.AccountNumber).OrderByDescending(t => t.Date).ToList();
-        else
-            logs = TransactionRepo.GetAll().OrderByDescending(t => t.Date).ToList();
+        var logs = isAdmin
+            ? Transactions.OrderByDescending(t => t.Date).ToList()
+            : Transactions.Where(t => t.AccountNumber == acc.AccountNumber).OrderByDescending(t => t.Date).ToList();
 
         if (filter == "2") logs = logs.Where(t => t.Type == TransactionType.Deposit).ToList();
         if (filter == "3") logs = logs.Where(t => t.Type == TransactionType.Withdraw).ToList();
 
         string header = isAdmin
-            ? "Date             | Account Number | Type       | Amount     | Description"
+            ? "Date             | Acc No  | Type       | Amount     | Description"
             : "Date             | Type       | Amount     | Description";
+
         Console.WriteLine($"\n{header}");
         Console.WriteLine(new string('-', header.Length));
 
@@ -317,9 +310,12 @@ public class Program
                 ? $"{t.Date:yyyy-MM-dd HH:mm} | {t.AccountNumber,-7} | {t.Type,-10} | {t.Amount,10:N0} | {t.Description}"
                 : $"{t.Date:yyyy-MM-dd HH:mm} | {t.Type,-10} | {t.Amount,10:N0} | {t.Description}";
 
-            if (t.Type == TransactionType.Deposit) Console.ForegroundColor = ConsoleColor.Green;
-            else if (t.Type == TransactionType.Withdraw) Console.ForegroundColor = ConsoleColor.Red;
-            else Console.ForegroundColor = ConsoleColor.Cyan; 
+            Console.ForegroundColor = t.Type switch
+            {
+                TransactionType.Deposit => ConsoleColor.DarkGreen,
+                TransactionType.Withdraw => ConsoleColor.Red,
+                _ => ConsoleColor.Cyan
+            };
 
             Console.WriteLine(row);
             Console.ResetColor();
@@ -337,7 +333,7 @@ public class Program
         string op = Console.ReadLine();
 
         acc.Status = (op == "1") ? AccountStatus.Frozen : AccountStatus.Active;
-        AccountRepo.Update(a => a.AccountNumber == acc.AccountNumber, acc);
+        SaveData();
         Console.WriteLine($"Account status updated to {acc.Status}.");
     }
 
@@ -348,33 +344,33 @@ public class Program
         {
             try
             {
-                var allAccounts = AccountRepo.GetAll();
-                foreach (var acc in allAccounts)
+                bool hasChanges = false;
+                foreach (var acc in Accounts)
                 {
                     if (acc.Role != Role.Customer || acc.Status != AccountStatus.Active) continue;
 
                     bool isOldEnough = (DateTime.Now - acc.CreatedAt).TotalDays >= 30;
-
-                    bool monthAlreadyPaid = acc.LastInterestDate.HasValue &&
-                                            acc.LastInterestDate.Value.Month == DateTime.Now.Month &&
-                                            acc.LastInterestDate.Value.Year == DateTime.Now.Year;
+                    bool monthAlreadyPaid = acc.LastInterestDate?.Month == DateTime.Now.Month &&
+                                            acc.LastInterestDate?.Year == DateTime.Now.Year;
 
                     if (isOldEnough && !monthAlreadyPaid && acc.Balance > 0)
                     {
                         decimal interest = acc.Balance * 0.005m;
                         acc.Balance += interest;
-
                         acc.LastInterestDate = DateTime.Now;
 
-                        AccountRepo.Update(a => a.AccountNumber == acc.AccountNumber, acc);
                         LogTransaction(acc.AccountNumber, TransactionType.Deposit, interest, "Auto Monthly Interest");
-                        WriteColor($"Interest of {interest:N0} added to account {acc.AccountNumber}. New Balance: {acc.Balance:N0}", ConsoleColor.Cyan);
+                        WriteColor($"Interest added to {acc.AccountNumber}.", ConsoleColor.Cyan);
+
+                        hasChanges = true;
                     }
                     else
                     {
-                        WriteColor($"Account {acc.AccountNumber} is not eligible for interest. Old Enough: {isOldEnough}, Month Paid: {monthAlreadyPaid}, Balance: {acc.Balance:N0}", ConsoleColor.Yellow);
+                        WriteColor($"Monthly interest skipped for account {acc.AccountNumber}.", ConsoleColor.Magenta);
                     }
                 }
+
+                if (hasChanges) SaveData();
             }
             catch (Exception ex)
             {
@@ -388,10 +384,9 @@ public class Program
     //daily withdrawal limit check
     public static bool IsOverDailyLimit(string accNo, decimal requestAmount)
     {
-        var todayTransactions = TransactionRepo.GetAll()
-            .Where(t => t.AccountNumber == accNo &&
+        var todayTransactions = Transactions.Where(t => t.AccountNumber == accNo &&
                         t.Date.Date == DateTime.Today &&
-                        (t.Type == TransactionType.Withdraw || t.Description.StartsWith("Transfer to")));
+                        (t.Type == TransactionType.Withdraw));
 
         decimal totalSpentToday = todayTransactions.Sum(t => t.Amount);
 
@@ -407,7 +402,7 @@ public class Program
     {
         Console.Write("Enter Account Number: ");
         string no = Console.ReadLine();
-        var acc = AccountRepo.Get(a => a.AccountNumber == no);
+        var acc = Accounts.FirstOrDefault(a => a.AccountNumber == no);
         if (acc == null)
         {
             WriteColor("Account not found.", ConsoleColor.Red);
@@ -444,7 +439,7 @@ public class Program
 
     public static void LogTransaction(string accNo, TransactionType type, decimal amount, string desc)
     {
-        int nextId = TransactionRepo.GetAll().Count + 1;
+        int nextId = Transactions.Count + 1;
         var trans = new Transaction
         {
             TransactionId = nextId,
@@ -454,7 +449,8 @@ public class Program
             Date = DateTime.Now,
             Description = desc
         };
-        TransactionRepo.Add(trans);
+        Transactions.Add(trans);
+        SaveData();
     }
 
     public static void WriteColor(string message, ConsoleColor color)
