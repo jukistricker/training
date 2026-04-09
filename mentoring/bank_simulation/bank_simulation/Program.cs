@@ -12,55 +12,57 @@ public class Program
     const decimal DAILY_LIMIT = 50000;
     public static List<BankAccount> Accounts = [];
     public static List<Transaction> Transactions = [];
+
+    static bool isRunning = true;
     public static void Main(string[] args)
-    {       
-        Program myApp = new Program();
-        createCsv(bankAccountsPath, bankAccountsFields);
-        createCsv(transactionsPath, transactionsFields);
+    {
+        CreateEntityInCsv(bankAccountsPath, bankAccountsFields);
+        CreateEntityInCsv(transactionsPath, transactionsFields);
         LoadData();
         SeedAdminData();
-        _=BackgroundInterest();
-        bool isRunning = true;
+        _ = RunBackgroundMonthlyInterestAsync(); //loại bỏ warning và Unobserved Task Exception
         while (isRunning)
         {
-            myApp.Dashboard();
-            string choice = Console.ReadLine();
-            switch (choice)
-            {
-                case "1":
-                    CreateAccount();
-                    break;
-                case "2":
-                    Deposit();
-                    break;
-                case "3":
-                    Withdraw();
-                    break;
-                case "4":
-                    Transfer();
-                    break;
-                case "5":   
-                    ViewAccountDetails();
-                    break;
-                case "6":
-                    ViewTransactionHistory();
-                    break;
-                case "7":
-                    ChangeAccountStatus();
-                    break;
-                case "8":
-                    Console.WriteLine("Exiting...");
-                    isRunning = false;
-                    break;
-                default:
-                    WriteColor("Invalid choice. Please try again.", ConsoleColor.Red);
-                    break;
-            }
+            RunApp();
         }
-
-
     }
-    public static void createCsv(string filePath, string fields)
+    public static void RunApp()
+    {
+        Dashboard();
+        string choice = Console.ReadLine();
+        switch (choice)
+        {
+            case "1":
+                CreateAccount();
+                break;
+            case "2":
+                Deposit();
+                break;
+            case "3":
+                Withdraw();
+                break;
+            case "4":
+                Transfer();
+                break;
+            case "5":
+                ViewAccountDetails();
+                break;
+            case "6":
+                ViewTransactionHistory();
+                break;
+            case "7":
+                ChangeAccountStatus();
+                break;
+            case "8":
+                Console.WriteLine("Exiting...");
+                isRunning = false;
+                break;
+            default:
+                WriteColor("Invalid choice. Please try again.", ConsoleColor.Red);
+                break;
+        }
+    }
+    public static void CreateEntityInCsv(string filePath, string fields)
     {
         if (!File.Exists(filePath))
         {
@@ -88,7 +90,7 @@ public class Program
             };
 
             Accounts.Add(adminAcc);
-            SaveData();
+            _=SaveDataAsync();
         }
     }
 
@@ -98,31 +100,38 @@ public class Program
         {
             Accounts = File.ReadAllLines(bankAccountsPath)
                            .Skip(1) 
-                           .Where(line => !string.IsNullOrWhiteSpace(line))
-                           .Select(line => BankAccount.FromCsvRow(line.Split(',')))
-                           .ToList();
+                            .Where(line => !string.IsNullOrWhiteSpace(line))
+                            .Select(line => BankAccount.FromCsvRow(line.Split(',')))
+                            .ToList();
         }
 
         if (File.Exists(transactionsPath))
         {
             Transactions = File.ReadAllLines(transactionsPath)
                                .Skip(1)
-                               .Where(line => !string.IsNullOrWhiteSpace(line))
-                               .Select(line => Transaction.FromCsvRow(line.Split(',')))
-                               .ToList();
+                                .Where(line => !string.IsNullOrWhiteSpace(line))
+                                .Select(line => Transaction.FromCsvRow(line.Split(',')))
+                                .ToList();
         }
     }
 
-    public static void SaveData()
+    public static async Task SaveDataAsync()
     {
-        var accLines = Accounts.Select(a => a.ToCsvRow()).Prepend(bankAccountsFields);
-        File.WriteAllLines(bankAccountsPath, accLines);
+        try
+        {
+            var accLines = Accounts.Select(a => a.ToCsvRow()).Prepend(bankAccountsFields);
+            await File.WriteAllLinesAsync(bankAccountsPath, accLines);
 
-        var transLines = Transactions.Select(t => t.ToCsvRow()).Prepend(transactionsFields);
-        File.WriteAllLines(transactionsPath, transLines);
+            var transLines = Transactions.Select(t => t.ToCsvRow()).Prepend(transactionsFields);
+            await File.WriteAllLinesAsync(transactionsPath, transLines);
+        }
+        catch (Exception ex)
+        {
+            await File.AppendAllTextAsync("system_log.txt", $"{DateTime.Now}: Save Error - {ex.Message}\n");
+        }
     }
 
-    public void Dashboard()
+    public static void Dashboard()
     {
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine(" === Bank Account System ===");
@@ -180,7 +189,7 @@ public class Program
             CreatedAt = DateTime.Now
         };
         Accounts.Add(newAcc);
-        SaveData();
+        _ = SaveDataAsync();
         Console.WriteLine("Account created successfully.");
     }
 
@@ -195,8 +204,8 @@ public class Program
         {
             acc.Balance += amount;
 
-            LogTransaction(acc.AccountNumber, TransactionType.Deposit, amount, "Deposit to account");
-            SaveData();
+            _ = LogTransactionAsync(acc.AccountNumber, TransactionType.Deposit, amount, "Deposit to account");
+            _ = SaveDataAsync();
 
             Console.WriteLine($"Deposit successful. New Balance: {acc.Balance:N0}");
         }
@@ -220,9 +229,9 @@ public class Program
             if (acc.Role != Role.Admin && IsOverDailyLimit(acc.AccountNumber, amount)) return;
 
             acc.Balance -= amount;
-            LogTransaction(acc.AccountNumber, TransactionType.Withdraw, amount, "Withdraw from account");
+            _ = LogTransactionAsync(acc.AccountNumber, TransactionType.Withdraw, amount, "Withdraw from account");
 
-            SaveData();
+            _ = SaveDataAsync();
 
             Console.WriteLine($"Withdraw successful. Remaining Balance: {acc.Balance:N0}");
         }
@@ -257,10 +266,10 @@ public class Program
             source.Balance -= amount;
             dest.Balance += amount;
 
-            LogTransaction(source.AccountNumber, TransactionType.Transfer, amount, $"Transfer to {dest.AccountNumber}");
-            LogTransaction(dest.AccountNumber, TransactionType.Transfer, amount, $"Transfer from {source.AccountNumber}");
+            _=LogTransactionAsync(source.AccountNumber, TransactionType.Transfer, amount, $"Transfer to {dest.AccountNumber}");
+            _ = LogTransactionAsync(dest.AccountNumber, TransactionType.Transfer, amount, $"Transfer from {source.AccountNumber}");
 
-            SaveData();
+            _ = SaveDataAsync();
 
             Console.WriteLine("Transfer completed successfully.");
         }
@@ -333,12 +342,12 @@ public class Program
         string op = Console.ReadLine();
 
         acc.Status = (op == "1") ? AccountStatus.Frozen : AccountStatus.Active;
-        SaveData();
+        _ = SaveDataAsync();
         Console.WriteLine($"Account status updated to {acc.Status}.");
     }
 
     //monthly interest calculation
-    public static async Task BackgroundInterest()
+    public static async Task RunBackgroundMonthlyInterestAsync()
     {
         while (true)
         {
@@ -359,7 +368,7 @@ public class Program
                         acc.Balance += interest;
                         acc.LastInterestDate = DateTime.Now;
 
-                        LogTransaction(acc.AccountNumber, TransactionType.Deposit, interest, "Auto Monthly Interest");
+                        await LogTransactionAsync(acc.AccountNumber, TransactionType.Deposit, interest, "Auto Monthly Interest");
                         WriteColor($"Interest added to {acc.AccountNumber}.", ConsoleColor.Cyan);
 
                         hasChanges = true;
@@ -370,7 +379,7 @@ public class Program
                     }
                 }
 
-                if (hasChanges) SaveData();
+                if (hasChanges) await SaveDataAsync();
             }
             catch (Exception ex)
             {
@@ -437,7 +446,7 @@ public class Program
         return false;
     }
 
-    public static void LogTransaction(string accNo, TransactionType type, decimal amount, string desc)
+    public static async Task LogTransactionAsync(string accNo, TransactionType type, decimal amount, string desc)
     {
         int nextId = Transactions.Count + 1;
         var trans = new Transaction
@@ -450,7 +459,7 @@ public class Program
             Description = desc
         };
         Transactions.Add(trans);
-        SaveData();
+        await SaveDataAsync(); // Cần await ở đây
     }
 
     public static void WriteColor(string message, ConsoleColor color)
