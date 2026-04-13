@@ -1,0 +1,20 @@
+[
+  {
+    "AccountNumber": "ADMIN001",
+    "OwnerName": "System Administrator",
+    "PasswordHash": "240BE518FABD2724DDB6F04EEB1DA5967448D7E831C08C8FA822809F74C720A9",
+    "Role": "Admin",
+    "Balance": 123009,
+    "Status": 0,
+    "CreatedAt": "2026-04-14T21:01:30.7073523+07:00"
+  },
+  {
+    "AccountNumber": "ADMIN00",
+    "OwnerName": "NGUYEN VAN A",
+    "PasswordHash": "240BE518FABD2724DDB6F04EEB1DA5967448D7E831C08C8FA822809F74C720A9",
+    "Role": "User",
+    "Balance": 12435,
+    "Status": 0,
+    "CreatedAt": "2026-04-14T21:02:09.1716774+07:00"
+  }
+]

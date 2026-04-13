@@ -1,0 +1,26 @@
+[
+  {
+    "Id": 1,
+    "AccountNumber": "ADMIN001",
+    "Type": 0,
+    "Amount": 123132,
+    "Description": "Deposit Money",
+    "CreatedAt": "2026-04-14T21:02:19.2969335+07:00"
+  },
+  {
+    "Id": 2,
+    "AccountNumber": "ADMIN001",
+    "Type": 2,
+    "Amount": 123,
+    "Description": "Transfer money to: ADMIN00",
+    "CreatedAt": "2026-04-14T21:02:29.2718803+07:00"
+  },
+  {
+    "Id": 3,
+    "AccountNumber": "ADMIN00",
+    "Type": 2,
+    "Amount": 123,
+    "Description": "Receive money from: ADMIN001",
+    "CreatedAt": "2026-04-14T21:02:29.2734483+07:00"
+  }
+]

@@ -10,6 +10,7 @@ theory/
 
 .vs/
 .vscode/
+.idea/
 *.user
 *.userosscache
 *.sln.docstates

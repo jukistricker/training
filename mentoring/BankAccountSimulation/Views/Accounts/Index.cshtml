@@ -1,0 +1,109 @@
+﻿@model IEnumerable<BankAccountSimulation.ViewModels.AccountsViewModel>
+
+@{
+    ViewData["Title"] = "All Accounts";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">All Accounts</h4>
+        <p class="text-muted small mb-0">Total: @Model.Count() accounts</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> Create Account
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="border-bottom">
+                <tr>
+                    <th class="ps-4">Account Number</th>
+                    <th>Owner Name</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                            No accounts found.
+                        </td>
+                    </tr>
+                }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">@item.AccountNumber</td>
+                        <td>
+                            <div class="fw-semibold">@item.OwnerName</div>
+                            <div class="text-muted small">@item.Role</div>
+                        </td>
+                        <td class="fw-bold">@item.Balance.ToString("N0") ₫</td>
+                        <td>
+                            @if (item.Status == "Active")
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-check-circle me-1"></i>Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="bi bi-slash-circle me-1"></i>Frozen
+                                </span>
+                            }
+                        </td>
+                        <td class="text-muted small">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a asp-action="Details" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                @if (item.Status == "Active")
+                                {
+                                    <form asp-action="Freeze" method="post" class="d-inline ms-1"
+                                          onsubmit="return confirm('Freeze account @item.AccountNumber?')">
+                                        <input type="hidden" name="accountNumber" value="@item.AccountNumber" />
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Freeze">
+                                            <i class="bi bi-pause-fill"></i>
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="Unfreeze" method="post" class="d-inline ms-1"
+                                          onsubmit="return confirm('Unfreeze account @item.AccountNumber?')">
+                                        <input type="hidden" name="accountNumber" value="@item.AccountNumber" />
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Unfreeze">
+                                            <i class="bi bi-play-fill"></i>
+                                        </button>
+                                    </form>
+                                }
+
+                                
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
