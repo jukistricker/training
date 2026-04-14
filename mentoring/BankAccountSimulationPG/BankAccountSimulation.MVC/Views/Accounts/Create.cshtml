@@ -1,0 +1,64 @@
+﻿@model BankAccountSimulation.ViewModels.CreateAccountViewModel
+@{
+    ViewData["Title"] = "Create new account";
+    Layout = "_AuthLayout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h4 class="mb-0">MỞ TÀI KHOẢN MỚI</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @* <div asp-validation-summary="All" class="text-danger small mb-3"></div> *@
+
+                        <div class="mb-3">
+                            <label asp-for="AccountNumber" class="form-label">Account Number</label>
+                            <input asp-for="AccountNumber" class="form-control" placeholder="Eg: 123456789" />
+                            <span asp-validation-for="AccountNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="OwnerName" class="form-label">Owner Name</label>
+                            <input asp-for="OwnerName" class="form-control" placeholder="NGUYEN VAN A" />
+                            <span asp-validation-for="OwnerName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="InitialBalance" class="form-label">Initial Balance</label>
+                            <input asp-for="InitialBalance" type="number" class="form-control" value="0" />
+                            <span asp-validation-for="InitialBalance" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">Password</label>
+                            <input asp-for="Password" type="password" class="form-control" placeholder="********" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="********" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success">Create</button>
+                            <div class="text-center mt-3">
+                                <span class="small text-muted">Already have an account?</span>
+                                <a asp-controller="Accounts" asp-action="Login" class="small text-decoration-none fw-bold">Login</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

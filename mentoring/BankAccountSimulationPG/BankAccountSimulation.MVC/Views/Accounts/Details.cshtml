@@ -1,0 +1,217 @@
+﻿@model IEnumerable<BankAccountSimulation.ViewModels.AccountsViewModel>
+
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+    bool isAdmin = User.IsInRole("Admin");
+    var currentAccount = ViewBag.CurrentAccount as BankAccountSimulation.ViewModels.AccountsViewModel;
+}
+
+<div class="card shadow-sm border-0 mb-4 bg-primary text-white">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <h5 class="text-white-50 mb-1">Welcome back,</h5>
+                <h2 class="fw-bold mb-1">@currentAccount.OwnerName</h2>
+                @if (currentAccount != null)
+                {
+                    <div class="d-flex gap-3 opacity-75 small">
+                        <span><i class="bi bi-hash"></i> @currentAccount.AccountNumber</span>
+                        <span><i class="bi bi-person-badge"></i> @currentAccount.Role</span>
+                        <span><i class="bi bi-calendar3"></i> Created at: @currentAccount.CreatedAt.ToString("dd/MM/yyyy")</span>
+                    </div>
+                }
+            </div>
+            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                <p class="text-white-50 mb-0 small">Account's balance:</p>
+                <h1 class="fw-bold mb-0">
+                    @(currentAccount?.Balance.ToString("C0", new System.Globalization.CultureInfo("vi-VN")) ?? "0 VNĐ")
+                </h1>
+                <div class="mt-2">
+                    <span class="badge bg-white text-primary px-3 py-2 rounded-pill shadow-sm">
+                        <i class="bi bi-shield-check me-1"></i> @(isAdmin ? "Admin" : "User")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isAdmin)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0 border-bottom">User Management</h4>
+            <p class="text-muted small mb-0">Manage information of users</p>
+        </div>
+
+    </div>
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="border-bottom">
+                    <tr>
+                        <th class="ps-4">Account Number</th>
+                        <th>Owner's Name'</th>
+                        <th>Balance</th>
+                        <th>Account's Status'</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold">@item.AccountNumber</td>
+                            <td>@item.OwnerName</td>
+                            <td class="fw-bold text-primary">@item.Balance.ToString("N0") ₫</td>
+                            <td>
+                                @if (item.Status == "Active")
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Frozen</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm border-bottom border btn-view-details"
+                                            data-account='@Json.Serialize(item)' title="View details">
+                                        <i class="bi bi-eye text-primary"></i>
+                                    </button>
+
+                                    @if (item.Status == "Active")
+                                    {
+                                        <button type="button" class="btn btn-sm border-bottom border ms-1 btn-confirm-action"
+                                                data-account="@item.AccountNumber" data-action="Freeze"
+                                                data-message="Freezee @item.AccountNumber?" title="Freeze">
+                                            <i class="bi bi-pause-fill text-danger"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm border-bottom border ms-1 btn-confirm-action"
+                                                data-account="@item.AccountNumber" data-action="Unfreeze"
+                                                data-message="Unfreeze @item.AccountNumber?" title="Unfreeze">
+                                            <i class="bi bi-play-fill text-success"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="bi bi-info-circle me-2"></i>Account's Details'</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted small">Account Number</span>
+                        <span class="fw-bold text-primary" id="det-account"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted small">Owner's Name'</span>
+                        <span class="fw-bold" id="det-owner"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted small">Role</span>
+                        <span class="badge bg-dark" id="det-role"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted small">Current Balance</span>
+                        <span class="fw-bold text-success fs-5" id="det-balance"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted small">Created at</span>
+                        <span id="det-date"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-bottom-0">
+                        <span class="text-muted small">Account Status</span>
+                        <span id="det-status"></span>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary w-100 shadow-sm" data-bs-dismiss="modal">Return</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center py-4">
+                <div id="modalIcon" class="mb-3"></div>
+                <h6 id="modalMessage" class="fw-bold"></h6>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="button" class="btn btn-light w-100" data-bs-dismiss="modal">Discard</button>
+                    <button type="button" id="btnConfirmSubmit" class="btn w-100 shadow-sm">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="hiddenActionForm" method="post" style="display:none;">
+    <input type="hidden" name="accountNumber" id="hiddenAccountNumber" />
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let currentAction = "";
+            let currentAccount = "";
+
+            $('.btn-view-details').on('click', function() {
+                const data = $(this).data('account');
+
+                $('#det-account').text(data.accountNumber);
+                $('#det-owner').text(data.ownerName);
+                $('#det-role').text(data.role);
+                $('#det-balance').text(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.balance));
+                $('#det-date').text(new Date(data.createdAt).toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'}));
+
+                const statusBadge = data.status === "Active"
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-danger">Frozen</span>';
+                $('#det-status').html(statusBadge);
+
+                $('#detailsModal').modal('show');
+            });
+            $('.btn-confirm-action').on('click', function() {
+                currentAccount = $(this).data('account');
+                currentAction = $(this).data('action');
+                $('#modalMessage').text($(this).data('message'));
+
+                if(currentAction === "Freeze") {
+                    $('#btnConfirmSubmit').attr('class', 'btn btn-danger w-100').text('Freeze');
+                    $('#modalIcon').html('<i class="bi bi-slash-circle display-4 text-danger"></i>');
+                } else {
+                    $('#btnConfirmSubmit').attr('class', 'btn btn-success w-100').text('Unfreeze');
+                    $('#modalIcon').html('<i class="bi bi-check2-circle display-4 text-success"></i>');
+                }
+                $('#confirmModal').modal('show');
+            });
+
+            $('#btnConfirmSubmit').on('click', function() {
+                let form = $('#hiddenActionForm');
+                form.attr('action', '/Accounts/' + currentAction);
+                $('#hiddenAccountNumber').val(currentAccount);
+                form.submit();
+            });
+        });
+    </script>
+}

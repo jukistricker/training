@@ -1,0 +1,62 @@
+﻿@model BankAccountSimulation.ViewModels.TransactionViewModel
+
+@{
+    ViewData["Title"] = "Nạp tiền";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-controller="Accounts" asp-action="Details">Account's Details'</a></li>
+                    <li class="breadcrumb-item active">Deposit</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-cash-stack me-2"></i>Deposit money</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Deposit" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger p-2 small"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Account Number</label>
+                            <input asp-for="AccountNumber" class="form-control bg-body-tertiary fw-bold" readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Amount" class="form-label">Amount to deposit (VND)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₫</span>
+                                <input asp-for="Amount" class="form-control form-control-lg text-success fw-bold" placeholder="0" type="number" />
+                            </div>
+                            <span asp-validation-for="Amount" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label">Description (Optional)</label>
+                            <textarea asp-for="Description" class="form-control" rows="2" placeholder="Deposit money..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success py-2">
+                                 Deposit
+                            </button>
+                            <a asp-controller="Accounts" asp-action="Details" class="btn btn-link text-muted text-decoration-none">Return</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

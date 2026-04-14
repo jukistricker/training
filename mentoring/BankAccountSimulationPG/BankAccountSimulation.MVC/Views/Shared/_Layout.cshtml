@@ -1,0 +1,147 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BankAccountSimulationPG</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+
+    <div id="wrapper">
+
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h5 class="mb-0 fw-bold text-success">
+                    <i class="bi bi-bank me-2"></i>BANK SIM
+                </h5>
+            </div>
+
+            <ul class="list-unstyled mt-3">
+                <li class="px-3 small text-uppercase text-muted fw-bold mb-2">Chính</li>
+                <li>
+                    <a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a asp-controller="Accounts" asp-action="Details" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Accounts" && ViewContext.RouteData.Values["Action"]?.ToString() == "Details" ? "active" : "")">
+                        <i class="bi bi-wallet2"></i> Account's Details'
+                    </a>
+                </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a asp-controller="Accounts" asp-action="Index" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Accounts" ? "active" : "")">
+                            <i class="bi bi-people"></i> All Accounts
+                        </a>
+                    </li>
+                }
+                <li>
+                    <a asp-controller="Transactions" asp-action="History" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "History" ? "active" : "")">
+                        <i class="bi bi-clock-history"></i> Transaction History
+                    </a>
+                </li>
+
+                <li class="px-3 small text-uppercase text-muted fw-bold mt-4 mb-2">Transactions</li>
+                <li>
+                    <a asp-controller="Transactions" asp-action="Deposit" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "Deposit" ? "active" : "")">
+                        <i class="bi bi-cash-stack"></i> Deposit
+                    </a>
+                </li>
+                <li>
+                    <a asp-controller="Transactions" asp-action="Withdraw" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "Withdraw" ? "active" : "")">
+                        <i class="bi bi-box-arrow-right"></i> Withdraw
+                    </a>
+                </li>
+                <li>
+                    <a asp-controller="Transactions" asp-action="Transfer" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "Transfer" ? "active" : "")">
+                        <i class="bi bi-arrow-left-right"></i> Transfer
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <nav class="top-navbar shadow-sm">
+                <button type="button" id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-md-none">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <div class="ms-auto d-flex align-items-center">
+                    <div id="themeSwitcher" class="me-3" title="Switch theme">
+                        <i class="bi bi-sun-fill" id="themeIcon"></i>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none dropdown-toggle text-body" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle fs-5"></i>
+                            <span class="ms-1 d-none d-sm-inline">@User.Identity?.Name</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li>
+                                <form asp-controller="Accounts" asp-action="Logout" method="post">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-left me-2"></i>Log out
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="main-container">
+                @RenderBody()
+            </main>
+
+            <footer class="py-3 px-4 border-top bg-body-tertiary mt-auto">
+                <div class="container-fluid text-center text-muted small">
+                    &copy; 2026 - BankAccountSimulationPG - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active active-mobile');
+            });
+
+            const themeSwitcher = $('#themeSwitcher');
+            const themeIcon = $('#themeIcon');
+            const htmlElement = $('html');
+
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+
+            themeSwitcher.on('click', function() {
+                const currentTheme = htmlElement.attr('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                applyTheme(newTheme);
+            });
+
+            function applyTheme(theme) {
+                htmlElement.attr('data-bs-theme', theme);
+                localStorage.setItem('theme', theme);
+
+                if (theme === 'dark') {
+                    themeIcon.removeClass('bi-sun-fill').addClass('bi-moon-stars-fill');
+                } else {
+                    themeIcon.removeClass('bi-moon-stars-fill').addClass('bi-sun-fill');
+                }
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

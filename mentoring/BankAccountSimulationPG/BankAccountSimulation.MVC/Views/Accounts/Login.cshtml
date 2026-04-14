@@ -1,0 +1,65 @@
+﻿@model BankAccountSimulation.ViewModels.LoginAccountViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = "_AuthLayout";
+}
+
+<div>
+    <h4>
+        NOTE: Login as admin to get all the features
+        <br />
+        Account Number: ACC1001
+        <br />
+        Password: admin123
+    </h4>
+</div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">LOGIN
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+
+                    <form asp-controller="Accounts" asp-action="Login" method="post">
+                        @Html.AntiForgeryToken()
+
+                        @* <div asp-validation-summary="ModelOnly" class="alert alert-danger p-2 small"></div> *@
+
+                        <div class="mb-3">
+                            <label asp-for="AccountNumber" class="form-label">Account Number</label>
+                            <input asp-for="AccountNumber" class="form-control" placeholder="Enter account number..." required autofocus />
+                            <span asp-validation-for="AccountNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">Password</label>
+                            <input asp-for="Password" class="form-control" placeholder="********" required />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <span class="small text-muted">Don't have an account?</span>
+                            <a asp-controller="Accounts" asp-action="Create" class="small text-decoration-none fw-bold">Create new account</a>
+                        </div>
+                    </form>
+
+                </div>
+                <div class="card-footer text-center py-2 bg-light">
+                    <small class="text-muted">NOTE: Do not share your password to anyone</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

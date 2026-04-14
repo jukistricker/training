@@ -1,0 +1,61 @@
+﻿@model BankAccountSimulation.ViewModels.TransferViewModel
+
+@{
+    ViewData["Title"] = "Transfer money";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-arrow-left-right me-2"></i>Transfer money</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Transfer" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger p-2 small"></div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted small">Source Account</label>
+                                <input asp-for="SourceAccountNumber" class="form-control bg-body-tertiary" readonly />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DestinationAccountNumber" class="form-label text-muted small">Destination Account</label>
+                                <input asp-for="DestinationAccountNumber" class="form-control" placeholder="Enter account number..." />
+                                <span asp-validation-for="DestinationAccountNumber" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Amount" class="form-label">Transfering Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₫</span>
+                                <input asp-for="Amount" class="form-control form-control-lg fw-bold" type="number" />
+                            </div>
+                            <span asp-validation-for="Amount" class="text-danger small"></span>
+                            <div class="form-text text-info small">Note: Minium balance after transfering must be 100 VND.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="2" placeholder="Hom nay em dep lam..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-2 shadow-sm">Transfer</button>
+                            <a asp-controller="Accounts" asp-action="Details" class="btn btn-link text-muted text-decoration-none">Return</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
