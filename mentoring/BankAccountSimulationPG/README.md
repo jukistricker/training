@@ -14,7 +14,7 @@ This guide provides step-by-step instructions to set up, migrate, and run the Ba
 
 ## 2. Database Configuration
 Before launching, update the connection string in the following file:
-`BankAccountSimulation.MVC/appsettings.json`
+`BankAccountSimulation.MVC/appsettings.Development.json`
 
 Ensure it points to your local PostgreSQL instance:
 ```json
