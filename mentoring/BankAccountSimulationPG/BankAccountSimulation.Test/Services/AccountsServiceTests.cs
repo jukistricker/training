@@ -22,8 +22,6 @@ public class AccountsServiceTests
         _service = new AccountsService(_mockUow.Object);
     }
 
-    // --- CreateAccount Tests ---
-
     [Fact]
     public async Task CreateAccount_AccountNumberAlreadyExists_ReturnsFailureResult()
     {
@@ -57,7 +55,6 @@ public class AccountsServiceTests
         _mockUow.Verify(u => u.CompleteAsync(), Times.Once);
     }
 
-    // --- Login Tests ---
 
     [Fact]
     public async Task Login_AccountDoesNotExist_ReturnsFailureWithCorrectKey()
@@ -93,7 +90,6 @@ public class AccountsServiceTests
         Assert.Equal("Invalid password", result.ErrorMessage);
     }
 
-    // --- UpdateStatus Tests ---
 
     [Fact]
     public async Task UpdateAccountStatus_AccountFound_UpdatesStatusAndSaves()
@@ -111,7 +107,6 @@ public class AccountsServiceTests
         _mockUow.Verify(u => u.CompleteAsync(), Times.Once);
     }
 
-    // --- GetDetails Tests ---
 
     [Fact]
     public async Task GetAccountDetails_ExistingAccount_ReturnsCorrectViewModel()
@@ -129,7 +124,6 @@ public class AccountsServiceTests
         Assert.Equal("Thanh", result!.OwnerName);
     }
 
-    // --- GetAccountDetails Tests ---
 
     [Fact]
     public async Task GetAccountDetails_AccountDoesNotExist_ReturnsNull()
@@ -145,7 +139,6 @@ public class AccountsServiceTests
         Assert.Null(result);
     }
 
-    // --- GetAllAccounts Tests ---
 
     [Fact]
     public async Task GetAllAccounts_WhenCalled_ReturnsAllAccountsMappedToViewModel()
@@ -168,7 +161,6 @@ public class AccountsServiceTests
         Assert.Equal("Frozen", list[1].Status);
     }
 
-    // --- UpdateAccountStatus Tests ---
 
     [Fact]
     public async Task UpdateAccountStatus_AccountNotFound_ReturnsFailureResult()

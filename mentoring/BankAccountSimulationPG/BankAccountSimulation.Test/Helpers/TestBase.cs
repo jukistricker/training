@@ -19,12 +19,10 @@ public abstract class TestBase
     {
         var httpContext = new DefaultHttpContext();
 
-        // Đăng ký AuthenticationService
         MockServiceProvider
             .Setup(sp => sp.GetService(typeof(IAuthenticationService)))
             .Returns(MockAuthService.Object);
 
-        // Đăng ký TempData (Sửa lỗi ITempDataDictionaryFactory)
         MockServiceProvider
             .Setup(sp => sp.GetService(typeof(ITempDataDictionaryFactory)))
             .Returns(MockTempDataFactory.Object);
@@ -32,7 +30,6 @@ public abstract class TestBase
         MockTempDataFactory.Setup(f => f.GetTempData(It.IsAny<HttpContext>()))
             .Returns(new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>()));
 
-        // Đăng ký UrlHelper (Sửa lỗi IUrlHelperFactory)
         MockServiceProvider
             .Setup(sp => sp.GetService(typeof(IUrlHelperFactory)))
             .Returns(MockUrlHelperFactory.Object);

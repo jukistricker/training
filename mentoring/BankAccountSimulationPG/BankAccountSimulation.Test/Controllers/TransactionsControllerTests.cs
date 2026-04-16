@@ -33,7 +33,6 @@ public class TransactionsControllerTests
             _mockTxValidator.Object,
             _mockTransferValidator.Object);
 
-        // Giả lập Identity cho User.Identity.Name
         var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {
             new(ClaimTypes.Name, "10112004")
         }, "TestAuth"));
@@ -43,7 +42,6 @@ public class TransactionsControllerTests
             HttpContext = new DefaultHttpContext { User = user }
         };
 
-        // Giả lập TempData để tránh lỗi NullReference
         _controller.TempData = new TempDataDictionary(_controller.HttpContext, Mock.Of<ITempDataProvider>());
     }
 
@@ -75,7 +73,7 @@ public class TransactionsControllerTests
     [Fact]
     public async Task Deposit_ValidationFails_ReturnsViewWithErrors()
     {
-        // Arrange: Giả lập có 2 lỗi validation để chạy qua vòng lặp foreach
+        // Arrange
         var model = new TransactionViewModel();
         var failures = new List<ValidationFailure> {
             new("Amount", "Error 1"),
@@ -86,7 +84,7 @@ public class TransactionsControllerTests
         // Act
         var result = await _controller.Deposit(model);
 
-        // Assert: Phủ nhánh !validationResult.IsValid
+        // Assert
         var viewResult = Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
         Assert.Equal(2, _controller.ModelState.ErrorCount);
@@ -95,7 +93,7 @@ public class TransactionsControllerTests
     [Fact]
     public async Task Deposit_ServiceFails_ReturnsViewWithErrorMessage()
     {
-        // Arrange: Validation pass nhưng Service báo lỗi
+        // Arrange
         var model = new TransactionViewModel { AccountNumber = "123", Amount = 100 };
         _mockTxValidator.Setup(v => v.ValidateAsync(model, default)).ReturnsAsync(new ValidationResult());
         _mockService.Setup(s => s.ProcessTransaction(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<TransactionType>(), It.IsAny<string>()))
@@ -104,7 +102,7 @@ public class TransactionsControllerTests
         // Act
         var result = await _controller.Deposit(model);
 
-        // Assert: Phủ nhánh !result.IsSuccess
+        // Assert
         var viewResult = Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
     }
@@ -133,25 +131,31 @@ public class TransactionsControllerTests
     [Fact]
     public async Task Transfer_ValidationFails_ReturnsView()
     {
+        // Arrange
         var model = new TransferViewModel();
         _mockTransferValidator.Setup(v => v.ValidateAsync(model, default))
             .ReturnsAsync(new ValidationResult(new[] { new ValidationFailure("Dest", "Required") }));
 
+        // Act
         var result = await _controller.Transfer(model);
 
+        // Assert
         Assert.IsType<ViewResult>(result);
     }
 
     [Fact]
     public async Task Transfer_Success_RedirectsToHistory()
     {
+        // Arrange
         var model = new TransferViewModel { SourceAccountNumber = "A", DestinationAccountNumber = "B", Amount = 10 };
         _mockTransferValidator.Setup(v => v.ValidateAsync(model, default)).ReturnsAsync(new ValidationResult());
         _mockService.Setup(s => s.Transfer("A", "B", 10, It.IsAny<string>()))
             .ReturnsAsync(OperationResult.Success());
 
+        // Act
         var result = await _controller.Transfer(model);
 
+        // Assert
         Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Transfer success!", _controller.TempData["SuccessMessage"]);
     }
@@ -161,7 +165,7 @@ public class TransactionsControllerTests
     [Fact]
     public async Task History_Always_SetsViewBagAndReturnsView()
     {
-        // Arrange: Giả lập 15 item để test logic Ceiling (15/10 = 1.5 -> 2 pages)
+        // Arrange
         _mockService.Setup(s => s.GetHistory(It.IsAny<string>(), "All", 1))
             .ReturnsAsync((new List<Transaction>(), 15));
 
@@ -180,11 +184,10 @@ public class TransactionsControllerTests
     [Fact]
     public async Task Deposit_DescriptionIsNull_UsesDefaultString()
     {
-        // Arrange: Truyền Description là NULL để phủ nhánh ??
+        // Arrange
         var model = new TransactionViewModel { AccountNumber = "123", Amount = 100, Description = null };
         _mockTxValidator.Setup(v => v.ValidateAsync(model, default)).ReturnsAsync(new ValidationResult());
 
-        // Quan trọng: Setup Service nhận đúng chuỗi mặc định "Deposit Money"
         _mockService.Setup(s => s.ProcessTransaction("123", 100, TransactionType.Deposit, "Deposit Money"))
             .ReturnsAsync(OperationResult.Success());
 
@@ -198,7 +201,7 @@ public class TransactionsControllerTests
     [Fact]
     public async Task Withdraw_DescriptionIsNull_UsesDefaultString()
     {
-        // Arrange: Tương tự cho Withdraw nhánh ?? "Withdraw money"
+        // Arrange
         var model = new TransactionViewModel { AccountNumber = "123", Amount = 100, Description = null };
         _mockTxValidator.Setup(v => v.ValidateAsync(model, default)).ReturnsAsync(new ValidationResult());
         _mockService.Setup(s => s.ProcessTransaction("123", 100, TransactionType.Withdraw, "Withdraw money"))
@@ -214,7 +217,7 @@ public class TransactionsControllerTests
     [Fact]
     public async Task History_TotalCountIsZero_ReturnsZeroPages()
     {
-        // Arrange: Test trường hợp không có giao dịch nào
+        // Arrange
         _mockService.Setup(s => s.GetHistory(It.IsAny<string>(), "All", 1))
             .ReturnsAsync((new List<Transaction>(), 0));
 
@@ -229,7 +232,7 @@ public class TransactionsControllerTests
     [Fact]
     public async Task History_MultiplePages_CalculatesCorrectCeiling()
     {
-        // Arrange: 11 items / 10 pageSize = 1.1 -> phải là 2 trang
+        // Arrange
         _mockService.Setup(s => s.GetHistory(It.IsAny<string>(), "All", 1))
             .ReturnsAsync((new List<Transaction>(), 11));
 
@@ -243,7 +246,7 @@ public class TransactionsControllerTests
     [Fact]
     public async Task Transfer_DescriptionProvided_PassesToService()
     {
-        // Arrange: Test nhánh có description cho Transfer
+        // Arrange
         var model = new TransferViewModel
         {
             SourceAccountNumber = "A",

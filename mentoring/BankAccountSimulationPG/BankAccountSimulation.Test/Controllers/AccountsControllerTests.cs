@@ -98,7 +98,6 @@ public class AccountsControllerTests : TestBase
         Assert.Equal("Index", redirect.ActionName);
         Assert.Equal("Home", redirect.ControllerName);
 
-        // Kiểm tra xem SignInAsync có được gọi không
         MockAuthService.Verify(a => a.SignInAsync(
             It.IsAny<HttpContext>(),
             It.IsAny<string>(),
@@ -126,7 +125,7 @@ public class AccountsControllerTests : TestBase
     {
         // Arrange
         string accNum = "123456";
-        SetUserIdentity(_controller, "admin_acc", "Admin"); // Giả lập Admin
+        SetUserIdentity(_controller, "admin_acc", "Admin"); 
 
         // Act
         var result = await _controller.Freeze(accNum);
@@ -142,7 +141,7 @@ public class AccountsControllerTests : TestBase
     {
         // Arrange
         string accNum = "123456";
-        SetUserIdentity(_controller, "user_acc", "User"); // Giả lập User thường
+        SetUserIdentity(_controller, "user_acc", "User"); 
 
         // Act
         var result = await _controller.Freeze(accNum);
@@ -155,7 +154,6 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public void Login_Get_ReturnsView()
     {
-        // Case này phủ dòng code return View() của phương thức GET Login
         var result = _controller.Login();
         Assert.IsType<ViewResult>(result);
     }
@@ -163,7 +161,6 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public void Create_Get_ReturnsView()
     {
-        // Case này phủ dòng code return View() của phương thức GET Create
         var result = _controller.Create();
         Assert.IsType<ViewResult>(result);
     }
@@ -171,12 +168,14 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public async Task Index_ServiceReturnsNull_ReturnsViewWithEmptyList()
     {
-        // Case này phủ nhánh logic: ?? new List<AccountsViewModel>()
+        // Arrange
         _mockAccountService.Setup(s => s.GetAllAccounts())
             .ReturnsAsync((List<AccountsViewModel>)null!);
 
+        // Act
         var result = await _controller.Index();
 
+        // Assert
         var viewResult = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<AccountsViewModel>>(viewResult.Model);
         Assert.Empty(model);
@@ -185,12 +184,14 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public async Task Unfreeze_AdminUser_RedirectsToIndex()
     {
-        // Test nhánh User.IsInRole("Admin") trong Unfreeze
+        // Arrange
         SetUserIdentity(_controller, "admin_user", "Admin");
         string accNum = "123456";
 
+        // Act
         var result = await _controller.Unfreeze(accNum);
 
+        // Assert
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Index", redirect.ActionName);
         _mockAccountService.Verify(s => s.UpdateAccountStatus(accNum, AccountStatus.Active), Times.Once);
@@ -199,12 +200,14 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public async Task Unfreeze_NormalUser_RedirectsToDetails()
     {
-        // Test nhánh else (RedirectToDetails) trong Unfreeze
+        // Arrange
         SetUserIdentity(_controller, "normal_user", "User");
         string accNum = "123456";
 
+        // Act
         var result = await _controller.Unfreeze(accNum);
 
+        // Assert
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Details", redirect.ActionName);
     }
@@ -212,14 +215,16 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public async Task Create_Post_ServiceReturnsError_ReturnsViewWithModelStateError()
     {
-        // Phủ nhánh: if (!account.IsSuccess) trong Create
+        // Arrange
         var request = new CreateAccountViewModel { AccountNumber = "111" };
         _mockCreateValidator.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new ValidationResult());
         _mockAccountService.Setup(s => s.CreateAccount(request))
             .ReturnsAsync(OperationResult.Fail("Duplicate Account", "AccountNumber"));
 
+        // Act
         var result = await _controller.Create(request);
 
+        // Assert
         var viewResult = Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
         Assert.Equal("Duplicate Account", _controller.ModelState["AccountNumber"]?.Errors[0].ErrorMessage);
@@ -228,14 +233,16 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public async Task Login_Post_InvalidPassword_ReturnsViewWithErrorMessage()
     {
-        // Phủ nhánh: if (!operationResult.IsSuccess) trong Login
+        // Arrange
         var request = new LoginAccountViewModel { AccountNumber = "123", Password = "wrong" };
         _mockLoginValidator.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new ValidationResult());
         _mockAccountService.Setup(s => s.Login(request))
             .ReturnsAsync(OperationResult.Fail("Invalid password", "Password"));
 
+        // Act
         var result = await _controller.Login(request);
 
+        // Assert
         var viewResult = Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
         Assert.Equal("Invalid password", _controller.ModelState["Password"]?.Errors[0].ErrorMessage);
@@ -244,7 +251,7 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public async Task Details_UserIsAdmin_ReturnsAllAccounts()
     {
-        // Phủ nhánh: if (userRole == "Admin") trong Details
+        // Arrange
         SetUserIdentity(_controller, "admin_user", "Admin");
         var currentAcc = new AccountsViewModel { AccountNumber = "admin_user", Role = "Admin" };
         var allAccs = new List<AccountsViewModel> { currentAcc, new() { AccountNumber = "user1" } };
@@ -252,8 +259,10 @@ public class AccountsControllerTests : TestBase
         _mockAccountService.Setup(s => s.GetAccountDetails("admin_user")).ReturnsAsync(currentAcc);
         _mockAccountService.Setup(s => s.GetAllAccounts()).ReturnsAsync(allAccs);
 
+        // Act
         var result = await _controller.Details();
 
+        // Assert
         var viewResult = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<AccountsViewModel>>(viewResult.Model);
         Assert.Equal(2, (model as List<AccountsViewModel>)?.Count);
@@ -262,9 +271,10 @@ public class AccountsControllerTests : TestBase
     [Fact]
     public async Task Logout_Post_SignsOutAndRedirects()
     {
-        // Phủ nốt hàm Logout
+        // Arrange & Act
         var result = await _controller.Logout();
 
+        // Assert
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Login", redirect.ActionName);
         MockAuthService.Verify(a => a.SignOutAsync(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<AuthenticationProperties>()), Times.Once);

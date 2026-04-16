@@ -19,13 +19,11 @@ public class TransactionsServiceTests
         _mockAccountRepo = new Mock<IRepository<BankAccount>>();
         _mockTransRepo = new Mock<IRepository<Transaction>>();
 
-        // Gán các Mock Repository vào Mock UnitOfWork
         _mockUow.Setup(u => u.Accounts).Returns(_mockAccountRepo.Object);
         _mockUow.Setup(u => u.Transactions).Returns(_mockTransRepo.Object);
 
         _service = new TransactionsService(_mockUow.Object);
 
-        // Setup các phương thức transaction cơ bản
         _mockUow.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
         _mockUow.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
         _mockUow.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
@@ -34,10 +32,10 @@ public class TransactionsServiceTests
     [Fact]
     public async Task Transfer_Success_UpdatesBothAccounts()
     {
+        // Arrange
         var source = new BankAccount { AccountNumber = "SRC", Balance = 500, Status = AccountStatus.Active };
         var dest = new BankAccount { AccountNumber = "DEST", Balance = 100, Status = AccountStatus.Active };
 
-        // Setup trên _mockAccountRepo thay vì _mockUow.Accounts
         _mockAccountRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<BankAccount, bool>>>()))
             .ReturnsAsync((Expression<Func<BankAccount, bool>> predicate) =>
             {
@@ -47,19 +45,21 @@ public class TransactionsServiceTests
                 return null;
             });
 
+        // Act
         var result = await _service.Transfer("SRC", "DEST", 200, "Transfer");
 
+        // Assert
         Assert.True(result.IsSuccess, result.ErrorMessage);
         Assert.Equal(300, source.Balance);
         Assert.Equal(300, dest.Balance);
 
-        // Kiểm tra xem có gọi Add log không
         _mockTransRepo.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Exactly(2));
     }
 
     [Fact]
     public async Task ProcessTransaction_Success_Commits()
     {
+        // Arrange
         var account = new BankAccount { AccountNumber = "123", Balance = 1000, Status = AccountStatus.Active };
 
         _mockAccountRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<BankAccount, bool>>>()))
@@ -69,8 +69,10 @@ public class TransactionsServiceTests
                 return func(account) ? account : null;
             });
 
+        // Act
         var result = await _service.ProcessTransaction("123", 500, TransactionType.Deposit, "Bonus");
 
+        // Assert
         Assert.True(result.IsSuccess, result.ErrorMessage);
         Assert.Equal(1500, account.Balance);
         _mockTransRepo.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Once);
@@ -79,6 +81,7 @@ public class TransactionsServiceTests
     [Fact]
     public async Task ProcessTransaction_Withdraw_Success()
     {
+        // Arrange
         var account = new BankAccount { AccountNumber = "123", Balance = 1000, Status = AccountStatus.Active };
 
         _mockAccountRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<BankAccount, bool>>>()))
@@ -88,8 +91,10 @@ public class TransactionsServiceTests
                 return func(account) ? account : null;
             });
 
+        // Act
         var result = await _service.ProcessTransaction("123", 500, TransactionType.Withdraw, "Atm");
 
+        // Assert
         Assert.True(result.IsSuccess, result.ErrorMessage);
         Assert.Equal(500, account.Balance);
     }
@@ -97,6 +102,7 @@ public class TransactionsServiceTests
     [Fact]
     public async Task GetHistory_AdminRole_DoesNotFilterByAccountNumber()
     {
+        // Arrange
         var admin = new BankAccount { AccountNumber = "Admin01", Role = "Admin", Status = AccountStatus.Active };
         var transactions = new List<Transaction>
         {
@@ -107,8 +113,10 @@ public class TransactionsServiceTests
         _mockAccountRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<BankAccount, bool>>>())).ReturnsAsync(admin);
         _mockTransRepo.Setup(r => r.GetQueryable()).Returns(transactions);
 
+        // Act
         var (items, count) = await _service.GetHistory("Admin01", "All", 1);
 
+        // Assert
         Assert.Equal(2, count);
     }
 }

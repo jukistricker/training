@@ -57,7 +57,6 @@ public class HomeControllerTests
     public void Error_ActivityIsNull_ReturnsViewWithErrorViewModelWithTraceIdentifier()
     {
         // Arrange
-        // Đảm bảo không có Activity nào đang chạy
         if (Activity.Current != null) Activity.Current = null;
 
         var httpContext = new DefaultHttpContext();
