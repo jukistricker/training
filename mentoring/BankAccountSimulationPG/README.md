@@ -41,3 +41,53 @@ Start the MVC web interface:
 ```bash
 dotnet run --project BankAccountSimulation.MVC
 ```
+
+## 4. Testing & Code Coverage
+### Step 1: Prerequisites for Testing
+To generate visual coverage reports, ensure you have the ReportGenerator tool installed:
+
+```bash
+dotnet tool install --global dotnet-reportgenerator-globaltool
+```
+### Step 2: Running Unit Tests
+To execute all test suites and view the results directly in your terminal, run:
+
+```bash
+dotnet test
+```
+### Step 3: Generating Coverage Reports (HTML)
+To generate a detailed line-by-line coverage report (similar to the one provided in the documentation), follow these two steps:
+
+#### Run tests and collect coverage data
+
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+```
+#### Transform the raw data into a readable HTML report
+<b>(Note: Replace the path to the coverage.cobertura.xml file with the actual path generated in your TestResults folder)</b>
+
+```bash
+reportgenerator "-reports:BankAccountSimulation.Test\TestResults\**\coverage.cobertura.xml" "-targetdir:coveragereport" -reporttypes:Html
+```
+Once completed, open file `coveragereport/index.html` in your preferred web browser.
+
+### 5. Testing Standards & Quality Assurance
+To maintain high-quality code, all unit tests follow these strict principles:
+
+- **Isolation (AAA Pattern):** Every test case follows the Arrange-Act-Assert pattern. Dependencies are isolated using Mocks to ensure that tests do not fail due to external factors.
+
+Targeted Scope:
+
+- Service Layer: Focuses on business rules, transaction integrity, and repository interactions.
+
+- Controller Layer: Focuses on request handling, ModelState management, and proper Action results (Redirect/View).
+
+Mocking Strategy:
+
+- Mock<IUnitOfWork>: Simulates database transactions without requiring a live PostgreSQL instance.
+
+- Mock<IValidator<T>>: Injected into controllers to simulate various validation scenarios (Success/Failure) independently of the actual validation rules.
+
+- MockAuthService: Simulates identity claims and authentication cookies for testing protected routes.
+
+**Coverage Benchmark:** The project maintains a minimum coverage of 75% for both Service and Controller layers to ensure all critical execution paths are verified.

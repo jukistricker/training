@@ -1,10 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37027.9 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankAccountSimulation.MVC", "BankAccountSimulation.MVC\BankAccountSimulation.MVC.csproj", "{07EBB749-266B-4727-9F69-B79F8D2FACB2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankAccountSimulation.Domain", "BankAccountSimulation.Domain\BankAccountSimulation.Domain.csproj", "{0C1D8890-A3AD-47DF-B66E-92B149F91644}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankAccountSimulation.Infra", "BankAccountSimulation.Infra\BankAccountSimulation.Infra.csproj", "{576C1DA4-7035-4E7F-B070-C8EDD4449526}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankAccountSimulation.Test", "BankAccountSimulation.Test\BankAccountSimulation.Test.csproj", "{71AA6E6D-DB21-473C-A9B4-BD0AB76B4291}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +29,15 @@ Global
 		{576C1DA4-7035-4E7F-B070-C8EDD4449526}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{576C1DA4-7035-4E7F-B070-C8EDD4449526}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{576C1DA4-7035-4E7F-B070-C8EDD4449526}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71AA6E6D-DB21-473C-A9B4-BD0AB76B4291}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71AA6E6D-DB21-473C-A9B4-BD0AB76B4291}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71AA6E6D-DB21-473C-A9B4-BD0AB76B4291}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71AA6E6D-DB21-473C-A9B4-BD0AB76B4291}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {50ED4BD1-D913-4DD3-AFEF-0B22211FA613}
 	EndGlobalSection
 EndGlobal

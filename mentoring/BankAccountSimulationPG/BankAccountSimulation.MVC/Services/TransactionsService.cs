@@ -150,10 +150,8 @@ public class TransactionsService : ITransactionsService
         var account = await _unitOfWork.Accounts.FindAsync(a => a.AccountNumber == accountNumber);
         if (account == null) return (Enumerable.Empty<Transaction>(), 0);
 
-        // 1. Lấy Queryable thay vì GetAll (Dữ liệu vẫn nằm ở DB, chưa tải về RAM)
         var query = _unitOfWork.Transactions.GetQueryable();
 
-        // 2. Build câu lệnh SQL (Chỉ là cộng dồn chuỗi lệnh, chưa chạy)
         if (account.Role != "Admin")
         {
             query = query.Where(t => t.AccountNumber == accountNumber);
@@ -164,10 +162,8 @@ public class TransactionsService : ITransactionsService
             query = query.Where(t => t.Type == transactionType);
         }
 
-        // 3. Thực thi COUNT trên DB (SQL: SELECT COUNT(*) FROM ...)
         int totalCount = await query.CountAsync();
 
-        // 4. Thực thi PHÂN TRANG trên DB (SQL: SELECT ... OFFSET x LIMIT y)
         int pageSize = 10;
         var items = await query
             .OrderByDescending(t => t.CreatedAt)

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+﻿
 namespace BankAccountSimulation.ViewModels;
 
 public class AccountsViewModel

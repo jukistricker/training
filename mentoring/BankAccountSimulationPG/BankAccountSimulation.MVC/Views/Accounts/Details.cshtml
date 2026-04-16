@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<BankAccountSimulation.ViewModels.AccountsViewModel>
 
 @{
-    ViewData["Title"] = "Quản lý tài khoản";
+    ViewData["Title"] = "Account Details";
     bool isAdmin = User.IsInRole("Admin");
     var currentAccount = ViewBag.CurrentAccount as BankAccountSimulation.ViewModels.AccountsViewModel;
 }
