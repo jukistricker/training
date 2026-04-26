@@ -164,7 +164,7 @@ const DashboardPage: React.FC = () => {
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} unit="$" />
                     <Tooltip 
-                      cursor={{ fill: '#f8f9fa' }}
+                      cursor={{ fill: '#353535' }}
                       contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                     />
                     <Legend />

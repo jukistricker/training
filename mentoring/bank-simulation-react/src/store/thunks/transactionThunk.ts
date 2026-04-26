@@ -75,10 +75,8 @@ export const executeTransaction = createAsyncThunk(
     try {
   let destAcc = null;
 
+  // 1. Liểm tra tài khoản đích 
   if (payload.type === TransactionType.Transfer) {
-    console.log("--- Start Transfer Check ---");
-    console.log("Searching for destination account:", payload.destinationaccount_number);
-
     if (!payload.destinationaccount_number) {
       return rejectWithValue({ message: "Destination account number is required.", field: "destinationaccount_number" });
     }
@@ -87,62 +85,68 @@ export const executeTransaction = createAsyncThunk(
       account_number: payload.destinationaccount_number 
     });
 
-    console.log("API Search Result:", allAccs);
-
     destAcc = Array.isArray(allAccs) ? allAccs[0] : null;
 
     if (!destAcc) {
-      console.error("Validation Failed: Destination account not found in DB");
       return rejectWithValue({ message: "Destination account does not exist.", field: "destinationaccount_number" });
     }
 
     if (Number(destAcc.account_number) === Number(sourceAcc.account_number)) {
-      console.error("Validation Failed: Source and Destination are identical");
       return rejectWithValue({ message: "Cannot transfer to the same account.", field: "destinationaccount_number" });
     }
-    
-    console.log("Transfer Validation OK. Destination:", destAcc.owner_name);
   }
 
-  console.log("--- Processing Source Update ---");
+  // 2. Chuẩn bị dữ liệu và các Promises
   const newSourceBalance = payload.type === TransactionType.Deposit 
     ? sourceAcc.balance + payload.amount 
     : sourceAcc.balance - payload.amount;
 
-  console.log(`New Source Balance: ${sourceAcc.balance} -> ${newSourceBalance}`);
+  const transactionDate = new Date().toISOString();
+  const sourceDescription = payload.description?.trim() 
+    ? `${action} money, ${payload.description}` 
+    : `${action} money`;
 
-  await api.patch(`${JSON_SERVER_ACCOUNTS}/${sourceAcc.id}`, { balance: newSourceBalance });
-  console.log("Source balance patched successfully");
-
-  await api.post('/transactions', {
-    account_number: sourceAcc.account_number,
-    transaction_type: payload.type,
-    amount: payload.amount,
-    description: payload.description?.trim() ? `${action} money, ${payload.description}` : `${action} money`,
-    created_at: new Date().toISOString()
-  });
-  console.log("Source transaction logged");
-
-  if (payload.type === TransactionType.Transfer && destAcc) {
-    console.log("--- Processing Destination Update ---");
-    await api.patch(`${JSON_SERVER_ACCOUNTS}/${destAcc.id}`, { balance: destAcc.balance + payload.amount });
-    console.log("Destination balance patched successfully");
-
-    await api.post('/transactions', {
-      account_number: destAcc.account_number,
-      transaction_type: TransactionType.Transfer,
+  // Mảng chứa các task
+  const tasks: Promise<any>[] = [
+    // Task 1: Cập nhật số dư nguồn
+    api.patch(`${JSON_SERVER_ACCOUNTS}/${sourceAcc.id}`, { balance: newSourceBalance }),
+    // Task 2: Ghi log giao dịch nguồn
+    api.post('/transactions', {
+      account_number: sourceAcc.account_number,
+      transaction_type: payload.type,
       amount: payload.amount,
-      description: payload.description ? `Receive money from: ${sourceAcc.account_number}, ${payload.description}` : `Receive money from: ${sourceAcc.account_number}`,
-      created_at: new Date().toISOString()
-    });
-    console.log("Destination transaction logged");
+      description: sourceDescription,
+      created_at: transactionDate
+    })
+  ];
+
+  // Nếu là chuyển khoản, thêm các task cho tài khoản đích
+  if (payload.type === TransactionType.Transfer && destAcc) {
+    const destDescription = payload.description 
+      ? `Receive money from: ${sourceAcc.account_number}, ${payload.description}` 
+      : `Receive money from: ${sourceAcc.account_number}`;
+
+    tasks.push(
+      // Task 3: Cập nhật số dư đích
+      api.patch(`${JSON_SERVER_ACCOUNTS}/${destAcc.id}`, { balance: destAcc.balance + payload.amount }),
+      // Task 4: Ghi log giao dịch đích
+      api.post('/transactions', {
+        account_number: destAcc.account_number,
+        transaction_type: TransactionType.Transfer,
+        amount: payload.amount,
+        description: destDescription,
+        created_at: transactionDate
+      })
+    );
   }
+
+  // 3. Thực thi tất cả các task cùng lúc
+  await Promise.all(tasks);
 
   return { success: true };
 } catch (error: any) {
-  console.error("--- TRANSACTION CRASHED ---");
-  console.error("Error Detail:", error);
-  return rejectWithValue(error.message || error || "Transaction failed");
+  console.error("--- TRANSACTION CRASHED ---", error);
+  return rejectWithValue(error.message || "Transaction failed");
 }
   }
 );

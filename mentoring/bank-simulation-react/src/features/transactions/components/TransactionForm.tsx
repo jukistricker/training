@@ -3,18 +3,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AppDispatch, RootState } from "../../store/store";
-import { executeTransaction } from "../../store/thunks/transactionThunk";
-import { TransactionType } from "../../types/transaction";
-import { InputField } from "./InputField";
-import {
-  TransactionFormValues,
-  transactionSchema,
-} from "../../features/transactions/types";
-import { ROUTES } from "../../config/constants/url_routes";
+import { AppDispatch, RootState } from "../../../store/store";
+import { executeTransaction } from "../../../store/thunks/transactionThunk";
+import { TransactionType } from "../../../types/transaction";
+import { InputField } from "../../../components/ui/InputField";
+import { TransactionFormValues, transactionSchema } from "../types";
+import { ROUTES } from "../../../config/constants/url_routes";
 import toast from "react-hot-toast";
-import { JSON_SERVER_ACCOUNTS } from "../../config/constants/json_server_routes";
-import { api } from "../../lib/api";
+import { JSON_SERVER_ACCOUNTS } from "../../../config/constants/json_server_routes";
+import { api } from "../../../lib/api";
 
 interface TransactionFormProps {
   type: "deposit" | "withdraw" | "transfer";
@@ -35,7 +32,6 @@ export const TransactionForm = ({
   const userId = useSelector((state: RootState) => state.account.user?.id);
   const [suggestions, setSuggestions] = React.useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = React.useState(false);
-  // Trong TransactionForm.tsx
 
   const searchAccounts = async (query: string) => {
     try {
@@ -83,9 +79,10 @@ export const TransactionForm = ({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<TransactionFormValues>({
-    resolver: zodResolver(transactionSchema),
+    resolver: zodResolver(transactionSchema(type)),
     defaultValues: {
       account_number: initialaccount_number,
       destinationaccount_number: 0,
@@ -116,6 +113,8 @@ export const TransactionForm = ({
         state: { id: userId },
       });
       toast.success(`${config.label} successfully!`);
+    } else {
+      toast.error(`${config.label} failed!`);
     }
   };
 
@@ -126,6 +125,11 @@ export const TransactionForm = ({
       </div>
       <div className="card-body p-4">
         <form onSubmit={handleSubmit(onSubmit)}>
+          {error && !error.field && (
+            <div className="alert alert-danger p-2 small">
+              {error.message}
+            </div>
+          )}
           <InputField
             label={isTransfer ? "Source Account" : "Account Number"}
             readOnly
@@ -241,10 +245,22 @@ export const TransactionForm = ({
           />
 
           <div className="mb-4">
-            <label className="form-label small fw-bold">Description</label>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label small fw-bold mb-0">
+                Description
+              </label>
+              {isTransfer && (
+                <span
+                  className={`small ${(watch("description")?.length ?? 0) >= 300 ? "text-danger" : "text-muted"}`}
+                >
+                  {watch("description")?.length ?? 0}/300
+                </span>
+              )}
+            </div>
             <textarea
               className={`form-control ${errors.description || error?.field === "description" ? "is-invalid" : ""}`}
               rows={2}
+              maxLength={isTransfer ? 300 : undefined}
               {...register("description")}
               placeholder="Enter description..."
             />

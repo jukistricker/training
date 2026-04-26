@@ -1,8 +1,6 @@
-import { useParams } from "react-router-dom";
-import { TransactionForm } from "../../../components/ui/TransactionForm";
+import { TransactionForm } from "./TransactionForm";
 import { RootState } from "../../../store/store";
 import { useSelector } from "react-redux";
-import { ACCOUNT_BASE, ROUTES } from "../../../config/constants/url_routes";
 
 export const TransferForm = () => {
   const account_number = useSelector((state: RootState) => state.account.user?.account_number);

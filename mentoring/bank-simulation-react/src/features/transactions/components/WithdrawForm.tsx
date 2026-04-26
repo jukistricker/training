@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { TransactionForm } from "../../../components/ui/TransactionForm";
+import { TransactionForm } from "./TransactionForm";
 import { RootState } from "../../../store/store";
 
 export const WithdrawForm= () => {

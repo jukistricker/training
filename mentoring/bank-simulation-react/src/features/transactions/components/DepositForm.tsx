@@ -1,4 +1,4 @@
-import { TransactionForm } from "../../../components/ui/TransactionForm";
+import { TransactionForm } from "./TransactionForm";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store/store";
 

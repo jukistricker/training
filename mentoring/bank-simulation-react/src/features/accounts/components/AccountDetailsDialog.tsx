@@ -1,4 +1,4 @@
-import { BankAccount } from "../../types/account";
+import { BankAccount } from "../../../types/account";
 
 interface Props {
   account: BankAccount;

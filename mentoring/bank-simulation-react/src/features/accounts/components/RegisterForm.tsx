@@ -21,7 +21,7 @@ export const RegisterForm = () => {
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      account_number: 0,
+      account_number: "",
       ownerName: "",
       initialBalance: 100,
       password: "",
@@ -55,29 +55,14 @@ export const RegisterForm = () => {
                 )}
 
                 <InputField
-                  label="Account Number"
-                  placeholder="123456"
-                  {...register("account_number",{valueAsNumber: true,
-              onChange: (e) => {
-                let val = e.target.value;
-
-                if (val === "") {
-                  setValue("account_number", 0);
-                  return;
+                label="Account Number"
+                placeholder="Eg: 1903..."
+                {...register("account_number")}
+                error={
+                  errors.account_number?.message ||
+                  (error?.field === "account_number" ? error.message : "")
                 }
-                if (val.length > 1 && val.startsWith("0")) {
-                  const sanitized = Number(val);
-                  setValue("account_number", sanitized);
-                }
-              },
-            })}
-            onFocus={(e) => {
-              if (Number(e.target.value) === 0) {
-                setValue("account_number", "" as any);
-              }
-            }}
-                  error={errors.account_number?.message || (error?.field === "account_number" ? error.message : "")}
-                />
+              />
 
                 <InputField
                   label="Owner Name"

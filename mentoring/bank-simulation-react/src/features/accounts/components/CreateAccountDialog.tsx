@@ -1,9 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser } from "../../store/thunks/accountThunk";
-import { registerSchema, RegisterFormValues } from "../../features/accounts/types";
-import { InputField } from "./InputField";
+import { registerUser } from "../../../store/thunks/accountThunk";
+import { registerSchema, RegisterFormValues } from "../types";
+import { InputField } from "../../../components/ui/InputField";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -23,7 +23,7 @@ export const CreateAccountDialog = ({ onClose, onSuccess }: Props) => {
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      account_number: 0,
+      account_number: "",
       ownerName: "",
       initialBalance: 100,
       password: "",
@@ -41,38 +41,35 @@ export const CreateAccountDialog = ({ onClose, onSuccess }: Props) => {
   };
 
   return (
-    <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.2)", backdropFilter: "blur(4px)" }}>
+    <div className="modal fade show d-block account-details-modal">
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content border-0 shadow-lg">
           <div className="modal-header bg-success text-white">
             <h5 className="modal-title fw-bold">
               <i className="bi bi-person-plus-fill me-2"></i>New Account
             </h5>
-            <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
+            <button
+              type="button"
+              className="btn-close btn-close-white"
+              onClick={onClose}
+            ></button>
           </div>
           <div className="modal-body p-4">
             <form onSubmit={handleSubmit(onSubmit)}>
               {error && !error.field && (
-                <div className="alert alert-danger p-2 small">{error.message}</div>
+                <div className="alert alert-danger p-2 small">
+                  {error.message}
+                </div>
               )}
 
               <InputField
                 label="Account Number"
-                placeholder="Ví dụ: 1903..."
-                {...register("account_number", {
-                    valueAsNumber: true,
-                    onChange: (e) => {
-                      const val = e.target.value;
-                      if (val === "") {
-                        setValue("account_number", "" as any);
-                        return;
-                      }
-                      if (val.length > 1 && val.startsWith("0")) {
-                        setValue("account_number", Number(val));
-                      }
-                    },
-                  })}
-                error={errors.account_number?.message || (error?.field === "account_number" ? error.message : "")}
+                placeholder="Eg: 1903..."
+                {...register("account_number")}
+                error={
+                  errors.account_number?.message ||
+                  (error?.field === "account_number" ? error.message : "")
+                }
               />
 
               <InputField
@@ -114,13 +111,21 @@ export const CreateAccountDialog = ({ onClose, onSuccess }: Props) => {
               </div>
 
               <div className="d-grid gap-2 mt-4">
-                <button type="submit" className="btn btn-success py-2 fw-bold" disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn btn-success py-2 fw-bold"
+                  disabled={loading}
+                >
                   {loading ? (
                     <span className="spinner-border spinner-border-sm me-2"></span>
                   ) : null}
                   Create Account
                 </button>
-                <button type="button" className="btn btn-light" onClick={onClose}>
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  onClick={onClose}
+                >
                   Cancel
                 </button>
               </div>

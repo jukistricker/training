@@ -6,8 +6,8 @@ import {
   toggleAccountStatus,
 } from "../../../store/thunks/accountThunk";
 import { BankAccount } from "../../../types/account";
-import { AccountDetailsDialog } from "../../../components/ui/AccountDetailsDialog";
-import { CreateAccountDialog } from "../../../components/ui/CreateAccountDialog";
+import { AccountDetailsDialog } from "./AccountDetailsDialog";
+import { CreateAccountDialog } from "./CreateAccountDialog";
 import { usePagination } from "../../../hooks/usePagination";
 import { Pagination } from "../../../components/ui/Pagination";
 import { BaseDialog } from "../../../components/ui/BaseDialog";
@@ -81,7 +81,7 @@ export const AccountList = () => {
               </div>
               <button
                 className="btn btn-sm btn-success shadow-sm px-3"
-                onClick={() => setIsCreateOpen(true)} // Thêm state này
+                onClick={() => setIsCreateOpen(true)} 
               >
                 <i className="bi bi-plus-lg me-1"></i> Create
               </button>
