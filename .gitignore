@@ -19,3 +19,4 @@ theory/
 
 *.log
 system_log.txt
+**/package-lock.json
