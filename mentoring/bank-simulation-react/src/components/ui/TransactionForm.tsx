@@ -40,8 +40,8 @@ export const TransactionForm = ({
   const searchAccounts = async (query: string) => {
     try {
       const response = await api.get<any[]>(JSON_SERVER_ACCOUNTS, {
-        // Truyền trực tiếp các key của json-server vào đây
         account_number: query,
+        account_number_ne: initialaccount_number,
         _per_page: 10,
       });
       setSuggestions(response);
@@ -50,7 +50,6 @@ export const TransactionForm = ({
     }
   };
 
-  // Sử dụng useEffect để debounce việc tìm kiếm
   const [searchTerm, setSearchTerm] = React.useState("");
 
   React.useEffect(() => {
